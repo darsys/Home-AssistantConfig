@@ -1,0 +1,9 @@
+  # - platform: mjpeg
+  #   mjpeg_url: !secret basementnecamurl
+  #   authentication: digest
+  #   name: basement_ne
+  # - platform: mjpeg
+  #   mjpeg_url: !secret kitchencamurl
+  #   authentication: digest
+  #   name: kitchen
+  - platform: zoneminder 

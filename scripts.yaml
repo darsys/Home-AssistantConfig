@@ -1,0 +1,157 @@
+southwestdoor_trigger:
+  sequence:
+  - service: rest_command.panelpi_pulse
+    data:
+      pin: 2
+      duration: 250
+southeastdoor_trigger:
+  sequence:
+  - service: rest_command.panelpi_pulse
+    data:
+      pin: 6
+      duration: 500
+northeastdoor_trigger:
+  sequence:
+  - service: switch.turn_on
+    data:
+      entity_id: switch.northeastoverheaddoor
+  - delay:
+      milliseconds: 500
+  - service: switch.turn_off
+    data:
+      entity_id: switch.northeastoverheaddoor
+southcenterdoor_up:
+  sequence:
+  - service: rest_command.panelpi_pulse
+    data:
+      pin: 3
+      duration: 500
+southcenterdoor_down:
+  sequence:
+  - service: rest_command.panelpi_pulse
+    data:
+      pin: 4
+      duration: 500
+southcenterdoor_stop:
+  sequence:
+  - service: rest_command.panelpi_pulse
+    data:
+      pin: 5
+      duration: 500
+shop_occupied:
+  alias: Shop Occupied
+  sequence:
+  - service: switch.turn_on
+    data:
+      entity_id: switch.baylights
+  - service: script.turn_on
+    data:
+      entity_id: script.shop_climate_warm
+  - service: notify.discorder
+    data:
+      message: Shop Occupied!
+      target: !secret discord_channel
+shop_begin_unoccupied:
+  alias: Shop start unoccupied
+  sequence:
+  - service: timer.start
+    data:
+      entity_id: timer.shutdown_timer
+  - service: switch.turn_off
+    data:
+      entity_id: switch.baylights
+  - service: switch.turn_off
+    data:
+      entity_id: switch.leantolights
+  - service: switch.turn_off
+    data:
+      entity_id: switch.shedstorageroomlight
+  - service: script.turn_on
+    data:
+      entity_id: script.shop_climate_idle
+  mode: single
+shop_finish_unoccupied:
+  alias: Shop finish unoccupied
+  sequence:
+  - service: input_boolean.turn_off
+    data:
+      entity_id: input_boolean.shop_occupied
+  - service: notify.discorder
+    data:
+      message: Shop Unoccupied!
+      target: !secret discord_channel
+shop_climate_warm:
+  alias: Shop Climate Warm
+  sequence:
+  - service: climate.set_temperature
+    data:
+      entity_id: climate.shop_heat
+      temperature: 63
+shop_climate_idle:
+  alias: Shop Climate Idle
+  sequence:
+  - service: climate.set_temperature
+    data:
+      entity_id: climate.shop_heat
+      temperature: 50
+exhaustfanoff:
+  sequence:
+  - service: switch.turn_off
+    data:
+      entity_id: switch.exhaustfanlow
+  - service: switch.turn_off
+    data:
+      entity_id: switch.exhaustfanmedium
+exhaustfanlow:
+  sequence:
+  - service: input_select.select_option
+    data:
+      entity_id: input_select.exhaust_fan_speed
+      option: low
+  - service: switch.turn_off
+    data:
+      entity_id: switch.exhaustfanmedium
+  - service: switch.turn_on
+    data:
+      entity_id: switch.exhaustfanlow
+exhaustfanmedium:
+  sequence:
+  - service: input_select.select_option
+    data:
+      entity_id: input_select.exhaust_fan_speed
+      option: medium
+  - service: switch.turn_off
+    data:
+      entity_id: switch.exhaustfanlow
+  - service: switch.turn_on
+    data:
+      entity_id: switch.exhaustfanmedium
+exhaustfanhigh:
+  sequence:
+  - service: input_select.select_option
+    data:
+      entity_id: input_select.exhaust_fan_speed
+      option: high
+  - service: switch.turn_on
+    data:
+      entity_id: switch.exhaustfanlow
+  - service: switch.turn_on
+    data:
+      entity_id: switch.exhaustfanmedium
+blowdowncompressor:
+  alias: cycle compressor drain
+  sequence:
+  - data: {}
+    entity_id: switch.compressordrain
+    service: switch.turn_on
+  - delay: '10'
+  - data: {}
+    entity_id: switch.compressordrain
+    service: switch.turn_off
+shut_down_shop:
+  alias: shut down shop
+  sequence:
+  - service: timer.finish
+    data: {}
+    entity_id: timer.motion_timeout
+  mode: single

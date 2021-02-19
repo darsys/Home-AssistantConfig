@@ -1,0 +1,203 @@
+title: My Awesome Home
+views:
+  - path: default_view
+    title: Home
+    badges:
+      - binary_sensor.updater
+      - binary_sensor.remote_ui
+      - entity: input_boolean.damon_hk_present
+        name: Damon at home
+      - person.damon_vincent
+      - sun.sun
+    cards:
+      - entity: weather.home
+        type: weather-forecast
+      - type: entities
+        title: Outdoor Conditions
+        entities:
+          - entity: sensor.acurite_5n1_temperature
+            name: Temperature
+          - entity: sensor.acurite_5n1_humidity
+            icon: mdi:water-percent
+            name: Humidity
+          - entity: sensor.rainfall_24_hours
+            type: custom:multiple-entity-row
+            icon: mdi:weather-rainy
+            name: Rainfall 24h
+            secondary_info: 
+              entity: sensor.acurite_5n1_message_age
+              name: age
+            entities:
+              - entity: sensor.rainfall_last_hour
+                name: 1h
+              - entity: sensor.rainfall_last_7_days
+                name: 7d
+              - entity: sensor.rainfall_last_30_days
+                name: 30d
+          - entity: sensor.acurite_5n1_wind_speed
+            type: custom:multiple-entity-row
+            name: Wind
+            unit: mph
+            icon: mdi:weather-windy
+            entities:
+              - entity: sensor.acurite_5n1_wind_direction
+                name: false
+      - entities:
+          - light.foyer_lamp
+          - light.living_room_lamp
+        show_header_toggle: true
+        title: Living Room
+        type: entities
+      - entities:
+          - entity: switch.3dprinter
+            name: 3D Printer Power
+          - entity: switch.octopi
+            name: Octopi Power
+        show_header_toggle: true
+        title: Devices
+        type: entities
+      - entities:
+          - entity: switch.garage_outside_lights
+          - entity: switch.front_porch_lights
+          - entity: input_datetime.nightlights_offtime
+        show_header_toggle: true
+        title: Outside House
+        type: entities
+      - type: custom:mini-graph-card
+        entities:
+         - entity: sensor.acurite_5n1_wind_speed
+           unit: 'mph'
+      # - entities:
+      #   - switch.north_garage_door_switch
+      #   - switch.center_garage_door_switch
+      #   - switch.south_garage_door_switch
+      #   - switch.restart_garage_door_device
+      #   show_header_toggle: true
+      #   title: Outside House
+      #   type: entities
+      # - type: light
+      #   entity: light.treadmill_speed
+  # - name: Greenhouse
+  #   title: Greenhouse
+  #   badges:
+  #     - entity: sensor.averagetemperature
+  #       name: Average Temp
+  #     - entity: sensor.temperature1_2
+  #       name: Sensor Temp
+  #     - entity: sensor.solarpaneltilt
+  #       name: Tilt
+  #     - entity: sensor.sun_azimuth
+  #       name: Azimuth
+  #     - entity: sensor.sun_elevation
+  #       name: Elevation
+  #   cards:
+  #     - type: entities
+  #       entities:
+  #         - entity: switch.greenhouse_irrigation
+  #           name: Irrigation
+  #         - entity: switch.greenhouse_light
+  #           name: Lights
+  #         - entity: switch.greenhouse_vent
+  #           name: Vent
+  #         - entity: cover.solarpanel
+  #           name: Solar panel
+  #         - entity: switch.6301574084f3ebed1dff_1
+  #           name: West Heater
+  #         - entity: switch.6301574084f3ebed1dff_2
+  #           name: East Heater
+  #         - entity: switch.6301574084f3ebed1dff_3
+  #           name: Bed Heater
+  #         - entity: switch.6301574084f3ebed1dff_4
+  #           name: Battery Charger
+  #         - entity: fan.battery_fan_forward
+  #           name: Fan forward
+  #         - entity: fan.battery_fan_reverse
+  #           name: Fan reverse
+  #         - entity: sensor.uptime
+  #           name: ESP32 Uptime
+  #       title: Greenhouse Outlets
+  #       show_header_toggle: false
+  #     - type: history-graph
+  #       title: Temperatures
+  #       entities:
+  #         - entity: sensor.temperature1_2
+  #           name: ProbeTemp
+  #         - entity: sensor.averagetemperature
+  #           name: Average
+  #         - entity: sensor.greenhousetemperature
+  #           name: Middle
+  #         - entity: sensor.greenhouseintemperature
+  #           name: In
+  #         - entity: sensor.greenhouseouttemperature
+  #           name: Out
+  #         - entity: sensor.greenhouseoutsidetemperature
+  #           name: Outside
+  - title: Shop
+    cards:
+      - type: entities
+        title: Fans
+        entities:
+          - entity: fan.exhaust
+            name: Exhaust fan
+          - entity: light.bayceilingfan
+            name: Bay Ceiling fans
+      - type: entities
+        title: Lights
+        show_header_toggle: true
+        entities:
+        - entity: switch.baylights
+          name: Bay lights
+        - entity: switch.shedstorageroomlight
+          name: Storage room lights
+        - entity: switch.leantolights
+          name: Lean to lights
+      - type: entities
+        title: Doors
+        show_header_toggle: false
+        entities:
+        - entity: cover.southwest_overhead_door
+          name: Southwest Door
+        - entity: cover.southcenter_overhead_door
+          name: Center Door
+        - entity: cover.southeast_overhead_door
+          name: Southeast Door
+        - entity: cover.northeast_overhead_door
+          name: Northeast Door
+      - type: entities
+        title: Presence
+        show_header_toggle: false
+        entities:
+        - entity: input_boolean.shop_occupied
+          name: Shop occupied
+        - entity: timer.motion_timeout
+          name: Motion Timer
+        - entity: timer.shutdown_timer
+          name: Shutdown Timer
+      - type: thermostat
+        entity: climate.shop_east_heat
+      - type: thermostat
+        entity: climate.shop_west_heat
+      - type: 'custom:simple-thermostat'
+        entity: climate.shop_heat
+        step_layout: row
+        name: true
+        icon: false
+        control: false
+  - title: Cameras
+    cards:
+      - camera_view: live
+        entity: camera.garage
+        type: picture-entity
+      - camera_view: live
+        entity: camera.kitchen
+        type: picture-entity
+      - camera_view: live
+        entity: camera.furnace
+        type: picture-entity
+      - camera_view: live
+        entity: camera.basement
+        type: picture-entity
+  - title: Iphone Tracker
+    cards:
+    - type: "custom:icloud3-event-log-card"
+      entity: sensor.icloud3_event_log

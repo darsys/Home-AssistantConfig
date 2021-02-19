@@ -1,0 +1,8 @@
+nightLights:
+  name: NightLights
+  entities:
+    - light.foyer_lamp
+    - switch.front_porch_lights
+    - switch.garage_outside_lights
+    - light.living_room_lamp
+    - light.foyer_lamp

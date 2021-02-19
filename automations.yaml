@@ -1,0 +1,222 @@
+- id: '1570980124290'
+  alias: Nightlights On
+  description: ''
+  trigger:
+  - event: sunset
+    platform: sun
+  condition:
+  - before: '23:59:00'
+    condition: time
+  action:
+  - data:
+      entity_id: group.nightlights
+    service: homeassistant.turn_on
+- id: '1570980409248'
+  alias: NightLights Off
+  description: ''
+  trigger:
+    platform: template
+    value_template: '{{ states(''sensor.time'') == states(''input_datetime.nightlights_offtime'')[0:5]
+      }}'
+  action:
+  - data:
+      entity_id: group.nightlights
+    service: homeassistant.turn_off
+- id: '1573526056051'
+  alias: Notify discord on remote disconnect!
+  description: ''
+  trigger:
+  - entity_id: binary_sensor.remote_ui
+    for: 00:10:00
+    from: Connected
+    platform: state
+    to: Disconnected
+  condition: []
+  action:
+  - data:
+      message: Remote Disconnected!!
+      target: !secret discord_channel
+    service: notify.discorder
+- id: damon tricorder discord
+  alias: damon tricorder discord
+  description: ''
+  trigger:
+  - entity_id: device_tracker.damon_tricorder
+    platform: state
+  condition: []
+  action:
+    service: notify.discorder
+    data_template:
+      message: Tricorder 1 {{trigger.to_state.name}} changed from {{trigger.from_state.state}}
+        to {{trigger.to_state.state }}
+      target: !secret discord_channel
+- id: damon tracking tricorder 2
+  alias: damon tracking tricorder 2
+  description: ''
+  trigger:
+  - entity_id: device_tracker.damon_tricorder_2
+    platform: state
+  condition: []
+  action:
+    service: notify.discorder
+    data_template:
+      message: Tricorder 2 {{trigger.to_state.name}} changed from {{trigger.from_state.state}}
+        to {{trigger.to_state.state }}
+      target: !secret discord_channel
+- id: damon hk home discord
+  alias: damon hk home discord
+  description: ''
+  trigger:
+  - entity_id: input_boolean.damon_hk_present
+    platform: state
+  condition: []
+  action:
+    service: notify.discorder
+    data_template:
+      message: '{{trigger.to_state.name}} changed from {{trigger.from_state.state}}
+        to {{trigger.to_state.state }}'
+      target: !secret discord_channel
+- id: damon hk zm on
+  alias: damon hk zm on
+  trigger:
+  - platform: state
+    entity_id: input_boolean.late_evening
+    to: 'on'
+  action:
+  - service: zoneminder.set_run_state
+    data:
+      id: !secret zm_home_host
+      name: WEHOME
+- id: damon hk zm off
+  alias: damon hk zm off
+  trigger:
+  - platform: state
+    entity_id: input_boolean.late_evening
+    to: 'off'
+  action:
+  - service: zoneminder.set_run_state
+    data:
+      id: !secret zm_home_host
+      name: WEAWAY
+- id: solartild
+  alias: Solar Tilt
+  trigger:
+    platform: event
+    event_type: signal_received
+    event_data:
+      entity_id: sensor.sensor.sun_elevation
+  action:
+    service: mqtt.publish
+    data:
+      topic: solartilt
+      payload_template: '{{ states.sensor.sun_elevation }}'
+- id: weather station offline
+  alias: weather station offline
+  description: ''
+  trigger:
+  - entity_id: binary_sensor.weather_station_online
+    from: 'on'
+    platform: state
+    to: 'off'
+  condition: []
+  action:
+  - data_template:
+      message: Acurite Weather station has not sent a message for too long!!
+      target: !secret discord_channel
+    service: notify.discorder
+- id: weather station online
+  alias: weather station online
+  description: ''
+  trigger:
+  - entity_id: binary_sensor.weather_station_online
+    from: 'off'
+    platform: state
+    to: 'on'
+  condition: []
+  action:
+  - data_template:
+      message: Acurite Weather station is sending messages again!!
+      target: !secret discord_channel
+    service: notify.discorder
+- id: Camera Motion Detected
+  alias: Camera Motion Detected
+  description: Automation that handles shop camera motion triggers
+  trigger:
+  - platform: mqtt
+    topic: zoneminder/1
+  - platform: mqtt
+    topic: zoneminder/2
+  - platform: mqtt
+    topic: zoneminder/3
+  condition:
+  - condition: state
+    entity_id: script.shop_begin_unoccupied
+    state: 'off'
+  - condition: state
+    entity_id: timer.shutdown_timer
+    state: idle
+  action:
+  - entity_id: timer.motion_timeout
+    service: timer.start
+  - condition: state
+    entity_id: input_boolean.shop_occupied
+    state: 'off'
+  - service: input_boolean.turn_on
+    data:
+      entity_id: input_boolean.shop_occupied
+- id: '1592840409987'
+  alias: Shop Occupied
+  description: Automation handling when shop goes from unoccupied to occupied
+  trigger:
+  - entity_id: input_boolean.shop_occupied
+    from: 'off'
+    platform: state
+  condition: []
+  action:
+  - service: script.turn_on
+    data:
+      entity_id: script.shop_occupied
+- id: '1592840574236'
+  alias: Shop shutdown begin
+  description: Automation that begins shop shutdown when changing from occupied to
+    unoccupied
+  trigger:
+  - event_data:
+      entity_id: timer.motion_timeout
+    event_type: timer.finished
+    platform: event
+  condition: []
+  action:
+  - service: script.turn_on
+    data:
+      entity_id: script.shop_begin_unoccupied
+  mode: single
+- id: '1593186597054'
+  alias: Shop shutdown complete
+  description: Automation triggered when shop shutdown is complete
+  trigger:
+  - event_data:
+      entity_id: timer.shutdown_timer
+    event_type: timer.finished
+    platform: event
+  condition: []
+  action:
+  - service: script.turn_on
+    data:
+      entity_id: script.shop_finish_unoccupied
+- id: '1592841523830'
+  alias: Blow Down Compressor
+  description: ''
+  trigger:
+  - at: 04:00:00
+    platform: time
+  condition:
+  - condition: time
+    weekday:
+    - sun
+    - wed
+  action:
+  - service: script.turn_on
+    data:
+      entity_id: script.1592841446415
+      mode: single

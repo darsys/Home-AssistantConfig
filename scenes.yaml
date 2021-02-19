@@ -1,0 +1,78 @@
+- id: '1612766136159'
+  name: Shop Shutdown
+  entities:
+    switch.shedstorageroomlight:
+      friendly_name: shedStorageRoomLight
+      state: 'off'
+    light.bayceilingfan:
+      insteon_address: 1F.2A.A2
+      insteon_group: 1
+      friendly_name: Bay Ceiling Fans
+      icon: hass:fan
+      supported_features: 1
+      state: 'off'
+    fan.exhaust:
+      speed_list:
+      - low
+      - medium
+      - high
+      speed: low
+      friendly_name: Exhaust fan
+      supported_features: 1
+      state: 'off'
+    switch.baylights:
+      insteon_address: 21.6F.3D
+      insteon_group: 1
+      friendly_name: Bay Lights
+      icon: hass:lightbulb
+      state: 'off'
+    switch.leantolights:
+      insteon_address: 1B.51.E8
+      insteon_group: 1
+      friendly_name: Lean To Lights
+      icon: hass:lightbulb
+      state: 'off'
+    climate.shop_east_heat:
+      hvac_modes:
+      - heat
+      - 'off'
+      min_temp: 45
+      max_temp: 85
+      target_temp_step: 0.1
+      preset_modes:
+      - none
+      - away
+      current_temperature: 51.1
+      temperature: 50
+      hvac_action: idle
+      preset_mode: away
+      friendly_name: Shop East Heat
+      supported_features: 17
+      state: heat
+    climate.shop_west_heat:
+      hvac_modes:
+      - 'off'
+      - cool
+      - heat
+      min_temp: 40
+      max_temp: 90
+      fan_modes:
+      - 'on'
+      - auto
+      preset_modes:
+      - none
+      - away
+      current_temperature: 50
+      temperature: 50
+      target_temp_high:
+      target_temp_low:
+      current_humidity: 128
+      fan_mode: auto
+      hvac_action: heating
+      preset_mode: away
+      fan_action: running
+      permanent_hold: true
+      dr_phase: -1
+      friendly_name: Shop West Heat
+      supported_features: 27
+      state: heat

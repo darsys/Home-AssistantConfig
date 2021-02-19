@@ -1,0 +1,516 @@
+
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+frontend:
+  themes: !include_dir_merge_named themes/
+
+lovelace:
+  mode: yaml
+  resources:
+    - url: /local/custom_cards/icloud3-event-log-card.js?v=2.100
+      type: module
+    - url: /local/community/mini-graph-card/mini-graph-card-bundle.js
+      type: module
+    - url: /local/community/simple-thermostat/simple-thermostat.js?v=1
+      type: module
+    - url: /local/community/lovelace-multiple-entity-row/multiple-entity-row.js?v=4.0.0
+      type: module
+
+http:
+  server_port: 80
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+group: !include groups.yaml
+automation: !include automations.yaml
+scene: !include scenes.yaml
+script: !include scripts.yaml
+camera: !include cameras.yaml
+
+stream:
+ffmpeg:
+
+homeassistant:
+  customize: !include customize.yaml
+
+zone:
+  - name: shop
+    latitude: !secret shop_latitude
+    longitude: !secret shop_latitude
+    radius: 50
+    icon: mdi:castle
+  - name: home
+    latitude: !secret home_latitude
+    longitude: !secret home_latitude
+    radius: 50
+    icon: mdi:home
+
+logger:
+  default: warn
+  logs:
+    homeassistant.components.tplink: debug
+  
+mqtt:
+  broker: !secret mqtt_host
+  port: 8883
+  client_id: hasshome
+  username: !secret mqtt_un
+  password: !secret mqtt_pw
+  certificate: /ssl/ca.crt
+  tls_insecure: true
+  discovery: true
+  discovery_prefix: homeassistant
+
+notify:
+  - name: discorder
+    platform: discord
+    token: !secret discord_token
+
+recorder:
+  db_url: !secret maria_db_url
+  exclude:
+    entities:
+      - sensor.date
+      - sensor.date_time
+      - sensor.date_time_iso
+      - sensor.internet_time
+      - sensor.time
+      - sensor.time_date
+      - sensor.time_utc
+
+history:
+  exclude:
+    entities:
+      - sensor.date
+      - sensor.date_time
+      - sensor.date_time_iso
+      - sensor.internet_time
+      - sensor.time
+      - sensor.time_date
+      - sensor.time_utc
+
+
+influxdb:
+  host: a0d7b954-influxdb
+  port: 8086
+  database: homeassistant
+  username: !secret influxun
+  password: !secret influxpw
+  max_retries: 3
+  default_measurement: state
+
+input_datetime:
+  nightlights_offtime:
+    name: Nightlight Off Time
+    has_date: false
+    has_time: true
+
+octoprint:
+  name: octoprint
+  host: octoprint.tayoby.com
+  api_key: !secret octoprint_api
+  bed: true
+  number_of_tools: 1
+
+zoneminder:
+  - host: !secret zm_home_host
+    ssl: true
+    verify_ssl: false
+
+tplink:
+  light:
+    - host: 192.168.88.56
+    - host: 192.168.88.57
+    - host: 192.168.88.58
+  switch:
+    - host: 192.168.88.59
+    - host: 192.168.88.60
+    - host: 192.168.88.61
+
+switch:
+  # - platform: remote_rpi_gpio
+  #   host: !secret panelpi_ip
+  #   ports:
+  #     7: exhaust_low
+  #     8: exhaust_high
+  # - platform: template
+  #   switches:
+  #     exhaust_low:
+  #       friendly_name: "Exhaust Fan Low"
+  #       value_template: "{{ is_state('sensor.living_room_left_status', 'True') }}"
+  #       turn_on:
+  #         service: rest_command.panelpi_digital
+  #         data:
+  #           pin: 7
+  #           value: 0
+  #       turn_off:
+  #         service: rest_command.panelpi_digital
+  #         data:
+  #           node: 7
+  #           value: 1
+  - platform: rest
+    name: exhaustfanlow
+    resource: http://192.168.88.48:3000/gpio/digital/7
+    method: put
+    body_on: '{"state": "0"}'
+    body_off: '{"state": "1"}'
+    is_on_template: '{{ value_json.state == 0 }}'
+    headers:
+      Content-Type: application/json
+  - platform: rest
+    name: exhaustfanmedium
+    resource: http://192.168.88.48:3000/gpio/digital/8
+    method: put
+    body_on: '{"state": "0"}'
+    body_off: '{"state": "1"}'
+    is_on_template: '{{ value_json.state == 0 }}'
+    headers:
+      Content-Type: application/json
+
+binary_sensor:
+  - platform: template
+    sensors:
+      weather_station_online:
+        friendly_name: "Weather station is online"
+        value_template: >-
+            {{ states('sensor.acurite_5n1_message_age')|float < 300.0 }}
+  - platform: mqtt
+    name: "Greenhouse Sensor Battery Ok - 5885"
+    state_topic: "rtl_sdr/5885/battery_ok"
+    payload_on: "1"
+    payload_off: "0"
+  - platform: mqtt
+    name: "Acurite 5n1 Battery Ok"
+    state_topic: "rtl_sdr/5885/battery_ok"
+    payload_on: "1"
+    payload_off: "0"
+
+sensor:
+  - platform: time_date
+    display_options:
+      - 'time'
+      - 'date'
+      - 'date_time'
+      - 'date_time_iso'
+      - 'time_date'
+      - 'time_utc'
+      - 'beat'
+  - platform: mqtt
+    name: Greenhouse Temperature 5885
+    state_topic: "rtl_sdr/5885/temperature_C"
+    unit_of_measurement: '°C'
+    value_template: "{{ value | float | round(1) }} "
+  - platform: mqtt
+    name: Greenhouse Humidity 5885
+    state_topic: rtl_sdr/5885/humidity
+    unit_of_measurement: '%'
+  - platform: mqtt
+    state_topic: "greenhouse/temperature1"
+  - platform: mqtt
+    name: "Acurite 5n1 Time"
+    state_topic: "rtl_sdr/271/time"
+    unit_of_measurement: 'time'
+  - platform: mqtt
+    name: "Acurite 5n1 Wind Speed"
+    state_topic: "rtl_sdr/271/wind_avg_km_h"
+    unit_of_measurement: 'km/h'
+    value_template: "{{ value | float | round(1) }} "
+  - platform: mqtt
+    name: "Acurite 5n1 Wind Direction"
+    state_topic: "rtl_sdr/271/wind_dir_deg"
+    unit_of_measurement: 'degrees'
+  - platform: mqtt
+    name: "Acurite 5n1 Temperature"
+    state_topic: "rtl_sdr/271/temperature_C"
+    unit_of_measurement: '°C'
+    value_template: "{{ value | float | round(1) }} "
+  - platform: mqtt
+    name: Acurite 5n1 Humidity
+    state_topic: rtl_sdr/271/humidity
+    unit_of_measurement: '%'
+  - platform: mqtt
+    name: Acurite 5n1 Rainfall
+    state_topic: rtl_sdr/271/rain_mm
+    unit_of_measurement: 'in'
+    value_template: "{{ ((value | float)  *  0.03937) | round(1) }} "
+    force_update: true
+  - platform: uptime
+    name: uptime
+  - platform: octoprint
+    monitored_conditions:
+      - Printing
+      - Printing Error
+  - platform: template
+    sensors:
+      acurite_5n1_message_age:
+        value_template: >-
+          {% if states('sensor.uptime') | int > 45 %}
+            {{ (as_timestamp(now()) - as_timestamp(states.sensor.acurite_5n1_time.last_updated)) | round(1) }}
+          {% else %}
+            -999.0
+          {% endif %}
+        unit_of_measurement: "seconds"
+        unique_id: sensor.acurite_5n1_age
+  - platform: history_stats
+    name: Compressor ON Yesterday
+    entity_id: switch.aircompressor
+    state: 'on'
+    type: time
+    end: '{{ now().replace(hour=0, minute=0, second=0) }}'
+    duration:
+      hours: 24
+  - platform: statistics
+    entity_id: sensor.acurite_5n1_temperature
+    precision: 1
+    max_age: 
+      hours: 24
+  - platform: apcupsd
+    resources:
+    - apc
+    - date
+    - hostname
+    - version
+    - upsname
+    - cable
+    - driver
+    - upsmode
+    - starttime
+    - model
+    - status
+    - linev
+    - loadpct
+    - bcharge
+    - timeleft
+    - mbattchg
+    - mintimel
+    - maxtime
+    - outputv
+    - lotrans
+    - hitrans
+    - alarmdel
+    - numxfers
+    - tonbatt
+    - cumonbatt
+    - nominv
+    - nompower
+  
+  - platform: sql
+    db_url: !secret maria_db_url
+    scan_interval: 120
+    queries:
+      - name: rainfall last hour
+        query: "SELECT ROUND(MAX(state)-MIN(state),1) AS value FROM states WHERE entity_id='sensor.acurite_5n1_rainfall' AND state!='unknown' AND state!='unavailable' AND last_changed BETWEEN DATE_SUB(NOW(), INTERVAL 1 HOUR) AND NOW();"
+        column: 'value'
+        unit_of_measurement: 'in'
+      - name: rainfall 24 hours
+        query: "SELECT ROUND(MAX(state)-MIN(state),1) AS value FROM states WHERE entity_id='sensor.acurite_5n1_rainfall' AND state!='unknown' AND state!='unavailable' AND last_changed BETWEEN DATE_SUB(NOW(), INTERVAL 24 HOUR) AND NOW();"
+        column: 'value'
+        unit_of_measurement: 'in'
+      - name: rainfall last 7 days
+        query: "SELECT ROUND(MAX(state)-MIN(state),1) AS value FROM states WHERE entity_id='sensor.acurite_5n1_rainfall' AND state!='unknown' AND state!='unavailable' AND last_changed BETWEEN DATE_SUB(NOW(), INTERVAL 7 DAY) AND NOW();"
+        column: 'value'
+        unit_of_measurement: 'in'
+      - name: rainfall last 30 days
+        query: "SELECT ROUND(MAX(state)-MIN(state),1) AS value FROM states WHERE entity_id='sensor.acurite_5n1_rainfall' AND state!='unknown' AND state!='unavailable' AND last_changed BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW();"
+        column: 'value'
+        unit_of_measurement: 'in'
+
+apcupsd:
+  host: !secret apcupsd_host
+
+climate:
+  - platform: climate_group
+    name: Shop Heat
+    temperature_unit: 'F'
+    entities:
+    - climate.shop_west_heat
+    - climate.shop_east_heat
+  - platform: generic_thermostat
+    name: Shop East Heat
+    heater: switch.shop_east_heat_low
+    target_sensor: sensor.shop_east_temperature
+    min_temp: 45
+    max_temp: 85
+    ac_mode: false
+    target_temp: 50
+    cold_tolerance: 0.5
+    hot_tolerance: 0.8
+    min_cycle_duration:
+      minutes: 2
+    initial_hvac_mode: "heat"
+    away_temp: 50
+    precision: 0.1
+  - platform: honeywell
+    username: !secret honeywellun
+    password: !secret honeywellpw
+
+homekit:
+  filter:
+    include_entities:
+      - input_boolean.damon_hk_present
+      - input_boolean.kristi_hk_present
+
+insteon:
+  host: !secret insteon_host
+  ip_port: 25105
+  username: !secret insteon_un
+  password: !secret insteon_pw
+  hub_version: 2
+      
+timer:
+  motion_timeout:
+    duration: '00:45:00'
+  shutdown_timer:
+    duration: '00:00:45'
+    
+input_boolean:
+  damon_hk_present:
+    name: DamonHK
+    icon: mdi:account
+  kristi_hk_present:
+    name: KristiHK
+    icon: mdi:account
+  shop_occupied:
+    name: Shop is occupied
+    initial: off
+  exhaustfanon:
+    name: Exhaust fan on
+    initial: off
+
+input_select:
+  exhaust_fan_speed:
+    name: Exhaust Fan Speed
+    initial: low
+    options:
+      - low
+      - medium
+      - high
+
+fan:
+  - platform: template
+    fans:
+      exhaust:
+        friendly_name: "Exhaust fan"
+        speeds: [low, medium, high]
+        value_template: >
+          {% if is_state('switch.exhaustfanlow', 'on') or is_state('switch.exhaustfanmedium', 'on') %}
+            on
+          {% else %}
+            off
+          {% endif %}
+        speed_template:  "{{ states('input_select.exhaust_fan_speed') }}"
+        turn_on:
+          service: >
+            {% if is_state('input_select.exhaust_fan_speed', 'high') %}
+              script.exhaustfanhigh
+            {% elif is_state('input_select.exhaust_fan_speed', 'medium') %}
+              script.exhaustfanmedium
+            {% elif is_state('input_select.exhaust_fan_speed', 'low') %}
+              script.exhaustfanlow
+            {% else %}
+              script.exhaustfanlow
+            {% endif %}
+        turn_off:
+          service: script.exhaustfanoff
+        set_speed:
+          service: >
+            {% if speed | string == 'high' %}
+              script.exhaustfanhigh
+            {% elif speed | string == 'medium' %}
+              script.exhaustfanmedium
+            {% elif speed | string == 'low' %}
+              script.exhaustfanlow
+            {% else %}
+              script.exhaustfanlow
+            {% endif %}
+            
+cover:
+  - platform: template
+    covers:
+      southwest_overhead_door:
+        device_class: garage
+        friendly_name: "Southwest Overhead Door"
+        open_cover:
+          service: script.southwestdoor_trigger
+        close_cover:
+          service: script.southwestdoor_trigger
+        stop_cover:
+          service: script.southwestdoor_trigger
+      southeast_overhead_door:
+        device_class: garage
+        friendly_name: "Southeast Overhead Door"
+        open_cover:
+          service: script.southeastdoor_trigger
+        close_cover:
+          service: script.southeastdoor_trigger
+        stop_cover:
+          service: script.southeastdoor_trigger
+      southcenter_overhead_door:
+        optimistic: false
+        device_class: garage
+        friendly_name: "South Center Overhead Door"
+        open_cover:
+          service: script.southcenterdoor_up
+        close_cover:
+          service: script.southcenterdoor_down
+        stop_cover:
+          service: script.southcenterdoor_stop
+      northeast_overhead_door:
+        device_class: garage
+        friendly_name: "Northeast Overhead Door"
+        open_cover:
+          service: script.northeastdoor_trigger
+        close_cover:
+          service: script.northeastdoor_trigger
+        stop_cover:
+          service: script.northeastdoor_trigger
+                        
+device_tracker:
+  - platform: icloud3
+    username: !secret icloud_username
+    password: !secret icloud_password
+    track_devices:
+      - damon_tricorder > damon@ourcomputershop.com, _iosapp
+    log_level: eventlog
+
+rest_command:
+  panelpi_digital_status:
+    url: !secret panelpi_digital_status
+    method: GET
+    headers:
+      accept: 'application/json, text/html'
+      content_type:  'application/json'
+      user-agent: 'Mozilla/5.0 {{ useragent }}'
+    payload: '{"pin": "{{ pin }}","state": "{{ state }}"}'
+    content_type:  'application/json; charset=utf-8'
+  panelpi_digital:
+    url: !secret panelpi_digital
+    method: PUT
+    headers:
+      accept: 'application/json, text/html'
+      content_type:  'application/json'
+      user-agent: 'Mozilla/5.0 {{ useragent }}'
+    payload: '{"pin": "{{ pin }}","state": "{{ state }}"}'
+    content_type:  'application/json; charset=utf-8'
+  panelpi_pulse:
+    url: !secret panelpi_pulse
+    method: PUT
+    headers:
+      accept: 'application/json, text/html'
+      content_type:  'application/json'
+      user-agent: 'Mozilla/5.0 {{ useragent }}'
+    payload: '{"pin": "{{ pin }}","state": "{{ state }}","duration": "{{ duration }}"}'
+    content_type:  'application/json; charset=utf-8'
+  panelpi_pwm:
+    url: !secret panelpi_pwm
+    method: PUT
+    headers:
+      accept: 'application/json, text/html'
+      content_type:  'application/json'
+      user-agent: 'Mozilla/5.0 {{ useragent }}'
+    payload: '{"pin": "{{ pin }}","dutycycle": "{{ dutycycle }}"}'
+    content_type:  'application/json; charset=utf-8'
+    
