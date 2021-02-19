@@ -1,0 +1,53 @@
+esphome:
+  name: esp_treadmill
+  platform: ESP8266
+  board: nodemcuv2
+
+wifi:
+  ssid: !secret wifi
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esp Treadmill Fallback Hotspot"
+    password: !secret wifi_password
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: !secret esp_api
+
+ota:
+  password: !secret esp_api
+  
+output:
+  - platform: esp8266_pwm
+    pin: D2
+    frequency: 20 Hz
+    id: pwm_output
+switch:
+  - platform: gpio
+    pin: D1
+    id: incline_up
+    name: "Treadmill Incline Up" 
+light:
+  - platform: monochromatic
+    output: pwm_output
+    name: "Treadmill Speed"
+    default_transition_length: 3s
+sensor:
+  - platform: pulse_counter
+    pin: D8
+    count_mode:
+      rising_edge: DISABLE
+      falling_edge: INCREMENT
+    internal_filter: 20us
+    update_interval: 2s
+    unit_of_measurement: 'mph'
+    name: 'Speed'
+    filters:
+      - multiply: 0.00568182

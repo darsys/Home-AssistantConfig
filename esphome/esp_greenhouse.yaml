@@ -1,0 +1,353 @@
+esphome:
+  name: esp_greenhouse
+  platform: ESP32
+  board: esp32dev
+
+wifi:
+  ssid: !secret wifi
+  password: !secret wifi_password
+  power_save_mode: none
+  manual_ip:
+    static_ip: !secret esp_greenhouse_ip
+    gateway: !secret router_ip
+    subnet: 255.255.255.0
+    dns1: !secret router_ip
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Esp32 Garage Fallback Hotspot"
+    password: !secret wifi_password
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: !secret esp_api
+
+ota:
+  password: !secret esp_api
+
+dallas:
+  - pin: GPIO12
+    update_interval: 30s
+i2c:
+   - id: bus_a
+     sda: 21
+     scl: 22
+     scan: True
+
+time:
+  - platform: sntp
+    timezone: "America/Chicago"
+    on_time:
+      # Set the solar panel to the sun at 00 and 30
+      - seconds: 0
+        minutes: /20
+        then:
+          - script.execute: script_solarpaneltosun
+
+sun:
+  latitude: !secret lat
+  longitude: !secret lon
+  on_sunset:
+    # when the sun is 3 degrees below horizon move solar panel down
+    - elevation: -3.0
+      then:
+      - logger.log: Move solar panel down for the morning.
+      - script.execute: script_solarpaneldown
+
+output:
+  - platform: ledc
+    pin: GPIO27
+    id: fanforward
+    frequency: 20000.0
+  - platform: ledc
+    pin: GPIO14
+    id: fanreverse
+    frequency: 20000.0
+
+sensor:
+  - platform: uptime
+    name: uptime
+
+  - platform: dallas
+    address: 0x250517C11B30FF28
+    name: "temp_probe_1"
+    filters:
+      - lambda: return x * (9.0/5.0) + 32.0;
+    unit_of_measurement: "°F"
+    on_value_range:
+      - below: 85.0
+        then:
+          - logger.log: "Temperature cool enough, closing vent"
+          - switch.turn_off: greenhousevent
+      - above: 90.0
+        then:
+          - logger.log: "Temperature too high, opening vent"
+          - switch.turn_on: greenhousevent
+
+  - platform: ina219
+    i2c_id: bus_a
+    address: 0x40
+    shunt_resistance: 0.005 ohm
+    current:
+      name: "INA219 Current"
+    power:
+      name: "INA219 Power"
+    bus_voltage:
+      name: "INA219 Bus Voltage"
+    shunt_voltage:
+      name: "INA219 Shunt Voltage"
+    max_voltage: 16.0V
+    max_current: 10.0A
+    update_interval: 10s
+  - platform: sun
+    name: "Sun Azimuth"
+    id: sunazimuth
+    type: azimuth
+  - platform: sun
+    name: "Sun Elevation"
+    id: sunelevation
+    type: elevation
+  # analog input for solar panel tilt potentiometer
+  - platform: adc
+    pin: GPIO36
+    name: "SolarPanelTilt"
+    id: solarpaneltilt
+    update_interval: 1s
+    accuracy_decimals: 0
+    attenuation: 11db
+    unit_of_measurement: "%"
+    filters:
+     - delta: 0.01
+     - calibrate_linear:
+          # Map 0.0 (from sensor) to 0.0 (true value)
+          - 2.17 -> 0
+          - 3.34 -> 100
+     - lambda: |-
+         if (x > 98.5) {
+           return 100.0;
+         } else if (x < 1.5) {
+           return 0.0;
+         } else {
+           return x;
+         }
+  - platform: homeassistant
+    name: "mainTemperature"
+    id: maintemperature
+    entity_id: sensor.greenhousetemperature
+    unit_of_measurement: "°F"
+  - platform: homeassistant
+    name: "inTemperature"
+    id: intemperature
+    entity_id: sensor.greenhouseintemperature
+    unit_of_measurement: "°F"
+  - platform: homeassistant
+    name: "outTemperature"
+    id: outtemperature
+    entity_id: sensor.greenhouseouttemperature
+    unit_of_measurement: "°F"
+  - platform: homeassistant
+    name: "outsideTemperature"
+    id: outsidetemperature
+    entity_id: sensor.greenhouseoutsidetemperature
+    unit_of_measurement: "°F"
+  - platform: template
+    name: averageTemperature
+    id: averagetemperature
+    unit_of_measurement: "°F"
+    lambda: |-
+      return (id(maintemperature).state + id(outtemperature).state + id(intemperature).state) / 3;
+    update_interval: 30s
+    on_value_range:
+      - below: 65.0
+        above: 50.0
+        then:
+          - script.execute: script_earthBatteryOff
+      - above: 65.0
+        then:
+          - script.execute: script_earthBatteryCharge
+      - below: 50.0
+        then:
+          - script.execute: script_earthBatteryDischarge
+switch:
+  - platform: gpio
+    name: Solar panel up
+    id: solarpanelup
+    pin:
+      number: GPIO15
+      inverted: True
+    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: gpio
+    name: relay3
+    id: relay3
+    pin:
+      number: GPIO2
+      inverted: True
+    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: gpio
+    name: Solar panel move
+    id: solarpanelmove
+    pin:
+      number: GPIO0
+      inverted: True
+    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: gpio
+    name: Greenhouse Irrigation
+    id: greenhouseirrigation
+    pin:
+      number: GPIO4
+      inverted: True
+    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: gpio
+    name: Greenhouse Light
+    id: greenhouselight
+    pin:
+      number: GPIO16
+      inverted: True
+    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: gpio
+    name: Greenhouse Vent
+    id: greenhousevent
+    pin:
+      number: GPIO17
+      inverted: True
+    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: restart
+    name: 'Restart Prometheus ESP'
+
+script:
+  - id: script_solarpanelup
+    then:
+      - logger.log: "Solar panel up"
+      - switch.turn_on: solarpanelup
+      - switch.turn_on: solarpanelmove
+      - lambda: |-
+          id(solar_panel).current_operation = COVER_OPERATION_OPENING;
+          id(solar_panel).publish_state();
+  - id: script_solarpaneldown
+    then:
+      - logger.log: "Solar panel down"
+      - lambda: |-
+          if ( id(solarpaneltilt).state > 1.0 ) {
+            id(solar_panel).current_operation = COVER_OPERATION_CLOSING;
+            id(solar_panel).publish_state();
+            id(solarpanelup).turn_off();
+            id(solarpanelmove).turn_on();
+          } else {
+            id(solar_panel).publish_state(COVER_CLOSED);
+          }
+  - id: script_solarpanelstop
+    then:
+      - logger.log: "Solar panel stop"
+      - switch.turn_off: solarpanelup
+      - switch.turn_off: solarpanelmove
+      - lambda: |-
+          id(solar_panel).current_operation = COVER_OPERATION_IDLE;
+          id(solar_panel).publish_state();
+  - id: script_solarpaneltosun
+    then:
+      - logger.log: "Solar panel to sun"
+      - lambda: |-
+          float newpos = (id(sunazimuth).state - 125.0) * 100.0 / 90.0;
+          ESP_LOGD("cover_scripttosun", "Sun elevation %.2f azimuth %.2f    new panel position %.2f ", id(sunelevation).state, id(sunazimuth).state, newpos);
+          if (id(sunelevation).state <= -2) {
+            ESP_LOGD("cover_scripttosun", "Sun is well below the horizon so setting to 0.");
+            newpos = 0;
+          } else if (newpos < 0) {
+            newpos = 0;
+          } else if (newpos > 100) {
+            newpos = 100;
+          }
+          auto call = id(solar_panel).make_call();
+          call.set_tilt(newpos/100.0);
+          call.perform();
+  - id: script_earthBatteryCharge
+    then:
+      - logger.log: "Earth Battery Charge On"
+      - fan.turn_off: batteryfanreverse
+      - fan.turn_on:
+          id: batteryfanforward
+          speed: MEDIUM
+  - id: script_earthBatteryDischarge
+    then:
+      - logger.log: "Earth Battery Discharge On"
+      - fan.turn_off: batteryfanforward
+      - fan.turn_on:
+          id: batteryfanreverse
+          speed: MEDIUM
+  - id: script_earthBatteryOff
+    then:
+      - logger.log: "Earth Battery Off"
+      - fan.turn_off: batteryfanforward
+      - fan.turn_off: batteryfanreverse
+
+cover:
+  - platform: template
+    name: "SolarPanel"
+    id: solar_panel
+    optimistic: false
+    assumed_state: true
+    lambda: |-
+      if ( id(solarpaneltilt).state <= 1.0 ) {
+        return COVER_CLOSED;
+      } else {
+        return COVER_OPEN;
+      }
+    tilt_lambda: |-
+      return id(solarpaneltilt).state / 100.0;
+    open_action:
+      - script.execute: script_solarpanelup
+    close_action:
+      - script.execute: script_solarpaneldown
+    stop_action:
+      - script.execute: script_solarpanelstop
+    tilt_action:
+      then:
+        - logger.log: "Solar panel tilt"
+        - lambda: |-
+              float diff = id(solarpaneltilt).state - (tilt * 100.0);
+              ESP_LOGD("cover_tiltaction", "state %.2f tilt %.2f diff %.2f", id(solarpaneltilt).state / 1, tilt * 100.0, diff);
+              if (diff == 0) {
+                auto call = id(solar_panel).make_call();
+                call.set_command_stop();
+                call.perform();
+              } else if ( diff > 1.0 || tilt * 100.0 <= 1) {
+                auto call = id(solar_panel).make_call();
+                call.set_command_close();
+                call.perform();
+              } else if ( diff < -1.0 || tilt * 100.0 >= 99) {
+                auto call = id(solar_panel).make_call();
+                call.set_command_open();
+                call.perform();
+              } else {
+                auto call = id(solar_panel).make_call();
+                call.set_command_stop();
+                call.perform();
+              }
+        - wait_until:
+          - lambda: |-
+              return abs(id(solarpaneltilt).state - (tilt * 100.0)) < 2;
+        - script.execute: script_solarpanelstop
+
+fan:
+  - platform: speed
+    output: fanforward
+    name: "Battery Fan Forward"
+    id: batteryfanforward
+    speed:
+      low: .40
+      medium: .70
+      high: 1.0
+
+  - platform: speed
+    output: fanreverse
+    name: "Battery Fan Reverse"
+    id: batteryfanreverse 
+    speed:
+      low: .40
+      medium: .70
+      high: 1.0

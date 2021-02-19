@@ -1,0 +1,72 @@
+esphome:
+  name: shop_east_thermostat
+  platform: ESP8266
+  board: d1_mini
+
+wifi:
+  ssid: !secret wifi
+  password: !secret wifi_password
+  power_save_mode: none
+  domain: .tayoby.com
+  ap:
+    ssid: "ShopEastThermostat"
+    password: !secret wifi_password
+    use_address: !secret shop_east_thermostat_ip
+  manual_ip:
+    static_ip: !secret shop_east_thermostat_ip
+    gateway: !secret router_ip
+    subnet: 255.255.255.0
+    dns1: !secret router_ip
+    
+captive_portal:
+
+# Enable logging
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+  password: !secret esp_api
+
+ota:
+  password: !secret esp_api
+
+sensor:
+  - platform: dht
+    pin: D7
+    model: AM2302
+    temperature:
+      name: "Shop East Temperature"
+      id: shop_east_temperature
+    humidity:
+      name: "Shop East Humidity"
+      id: shop_east_humidity
+    update_interval: 20s
+  - platform: wifi_signal
+    name: "Shop East Thermo Wifi Signal"
+    update_interval: 5s
+
+switch:
+  - platform: gpio
+    name: shop east heat low
+    id: shop_east_heat_low
+    pin: D5
+    inverted: true
+    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: gpio
+    name: shop east heat high
+    id: shop_east_heat_high
+    pin: D6
+    inverted: true
+    restore_mode: RESTORE_DEFAULT_OFF
+
+climate:
+  - platform: thermostat
+    id: shop_east_thermostat
+    sensor: shop_east_temperature
+    default_target_temperature_low: 55 °F
+    heat_action:
+      - switch.turn_on: shop_east_heat_low
+    idle_action:
+      - switch.turn_off: shop_east_heat_low
+
