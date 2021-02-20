@@ -77,61 +77,6 @@ views:
       #   type: entities
       # - type: light
       #   entity: light.treadmill_speed
-  # - name: Greenhouse
-  #   title: Greenhouse
-  #   badges:
-  #     - entity: sensor.averagetemperature
-  #       name: Average Temp
-  #     - entity: sensor.temperature1_2
-  #       name: Sensor Temp
-  #     - entity: sensor.solarpaneltilt
-  #       name: Tilt
-  #     - entity: sensor.sun_azimuth
-  #       name: Azimuth
-  #     - entity: sensor.sun_elevation
-  #       name: Elevation
-  #   cards:
-  #     - type: entities
-  #       entities:
-  #         - entity: switch.greenhouse_irrigation
-  #           name: Irrigation
-  #         - entity: switch.greenhouse_light
-  #           name: Lights
-  #         - entity: switch.greenhouse_vent
-  #           name: Vent
-  #         - entity: cover.solarpanel
-  #           name: Solar panel
-  #         - entity: switch.6301574084f3ebed1dff_1
-  #           name: West Heater
-  #         - entity: switch.6301574084f3ebed1dff_2
-  #           name: East Heater
-  #         - entity: switch.6301574084f3ebed1dff_3
-  #           name: Bed Heater
-  #         - entity: switch.6301574084f3ebed1dff_4
-  #           name: Battery Charger
-  #         - entity: fan.battery_fan_forward
-  #           name: Fan forward
-  #         - entity: fan.battery_fan_reverse
-  #           name: Fan reverse
-  #         - entity: sensor.uptime
-  #           name: ESP32 Uptime
-  #       title: Greenhouse Outlets
-  #       show_header_toggle: false
-  #     - type: history-graph
-  #       title: Temperatures
-  #       entities:
-  #         - entity: sensor.temperature1_2
-  #           name: ProbeTemp
-  #         - entity: sensor.averagetemperature
-  #           name: Average
-  #         - entity: sensor.greenhousetemperature
-  #           name: Middle
-  #         - entity: sensor.greenhouseintemperature
-  #           name: In
-  #         - entity: sensor.greenhouseouttemperature
-  #           name: Out
-  #         - entity: sensor.greenhouseoutsidetemperature
-  #           name: Outside
   - title: Shop
     cards:
       - type: entities
@@ -173,6 +118,8 @@ views:
           name: Motion Timer
         - entity: timer.shutdown_timer
           name: Shutdown Timer
+        - entity: sensor.shop_occupied_12hrs
+          name: Occupied Triggers 12hrs
       - type: thermostat
         entity: climate.shop_east_heat
       - type: thermostat
@@ -183,6 +130,60 @@ views:
         name: true
         icon: false
         control: false
+  - title: Greenhouse
+    badges:
+      - entity: sensor.temperature1
+        name: Sensor Temp
+      - entity: sensor.solarpaneltilt
+        name: Tilt
+      - entity: sensor.sun_azimuth
+        name: Azimuth
+      - entity: sensor.sun_elevation
+        name: Elevation
+    cards:
+        - type: history-graph
+          title: Temperatures
+          entities:
+          - entity: sensor.temperature1
+            name: Greeenhouse Temp
+          - entity: sensor.acurite_5n1_temperature
+            name: Outside Temp
+    #   - type: entities
+    #     entities:
+    #       - entity: switch.greenhouse_irrigation
+    #         name: Irrigation
+    #       - entity: switch.greenhouse_light
+    #         name: Lights
+    #       - entity: switch.greenhouse_vent
+    #         name: Vent
+    #       - entity: cover.solarpanel
+    #         name: Solar panel
+    #       - entity: switch.6301574084f3ebed1dff_1
+    #         name: West Heater
+    #       - entity: switch.6301574084f3ebed1dff_2
+    #         name: East Heater
+    #       - entity: switch.6301574084f3ebed1dff_3
+    #         name: Bed Heater
+    #       - entity: switch.6301574084f3ebed1dff_4
+    #         name: Battery Charger
+    #       - entity: fan.battery_fan_forward
+    #         name: Fan forward
+    #       - entity: fan.battery_fan_reverse
+    #         name: Fan reverse
+    #       - entity: sensor.uptime
+    #         name: ESP32 Uptime
+    #     title: Greenhouse Outlets
+    #     show_header_toggle: false
+          # - entity: sensor.averagetemperature
+          #   name: Average
+          # - entity: sensor.greenhousetemperature
+          #   name: Middle
+          # - entity: sensor.greenhouseintemperature
+          #   name: In
+          # - entity: sensor.greenhouseouttemperature
+          #   name: Out
+          # - entity: sensor.greenhouseoutsidetemperature
+          #   name: Outside
   - title: Cameras
     cards:
       - camera_view: live
