@@ -2,6 +2,9 @@ title: My Awesome Home
 views:
   - path: default_view
     title: Home
+    visible:
+      - user: d427a22cbc294d8fbf79d957ac98761c
+      - user: aa407a5348d94966aefb6044664c7cbb
     badges:
       - binary_sensor.updater
       - binary_sensor.remote_ui
@@ -42,27 +45,27 @@ views:
             entities:
               - entity: sensor.acurite_5n1_wind_direction
                 name: false
-      - entities:
+      - title: Living Room
+        type: entities
+        show_header_toggle: true
+        entities:
           - light.foyer_lamp
           - light.living_room_lamp
-        show_header_toggle: true
-        title: Living Room
+      - title: Devices
         type: entities
-      - entities:
+        show_header_toggle: true
+        entities:
           - entity: switch.3dprinter
             name: 3D Printer Power
           - entity: switch.octopi
             name: Octopi Power
+      - title: Outside House
         show_header_toggle: true
-        title: Devices
         type: entities
-      - entities:
+        entities:
           - entity: switch.garage_outside_lights
           - entity: switch.front_porch_lights
           - entity: input_datetime.nightlights_offtime
-        show_header_toggle: true
-        title: Outside House
-        type: entities
       - type: custom:mini-graph-card
         entities:
          - entity: sensor.acurite_5n1_wind_speed
@@ -78,6 +81,9 @@ views:
       # - type: light
       #   entity: light.treadmill_speed
   - title: Shop
+    visible:
+      - user: d427a22cbc294d8fbf79d957ac98761c
+      - user: aa407a5348d94966aefb6044664c7cbb
     cards:
       - type: entities
         title: Fans
@@ -121,7 +127,7 @@ views:
         - entity: sensor.shop_occupied_12hrs
           name: Occupied Triggers 12hrs
       - type: thermostat
-        entity: climate.shop_east_heat
+        entity: climate.shop_east_thermostat
       - type: thermostat
         entity: climate.shop_west_heat
       - type: 'custom:simple-thermostat'
@@ -132,8 +138,10 @@ views:
         control: false
   - title: Greenhouse
     badges:
-      - entity: sensor.temperature1
+      - entity: sensor.greenhouse_inside_temperature
         name: Sensor Temp
+      - entity: sensor.greenhouse_voltage
+        name: Voltage
       - entity: sensor.solarpaneltilt
         name: Tilt
       - entity: sensor.sun_azimuth
@@ -141,64 +149,109 @@ views:
       - entity: sensor.sun_elevation
         name: Elevation
     cards:
-        - type: history-graph
-          title: Temperatures
+        - type: custom:mini-graph-card
+          name: Temperatures
           entities:
-          - entity: sensor.temperature1
-            name: Greeenhouse Temp
-          - entity: sensor.acurite_5n1_temperature
+          - entity: sensor.greenhouse_inside_temperature
+            name: Inside Temperature
+          - entity: sensor.greenhouse_soil_temperature
+            name: Bed Temp
+          - entity: sensor.greenhouse_outside_temperature
             name: Outside Temp
-    #   - type: entities
-    #     entities:
-    #       - entity: switch.greenhouse_irrigation
-    #         name: Irrigation
-    #       - entity: switch.greenhouse_light
-    #         name: Lights
-    #       - entity: switch.greenhouse_vent
-    #         name: Vent
-    #       - entity: cover.solarpanel
-    #         name: Solar panel
-    #       - entity: switch.6301574084f3ebed1dff_1
-    #         name: West Heater
-    #       - entity: switch.6301574084f3ebed1dff_2
-    #         name: East Heater
-    #       - entity: switch.6301574084f3ebed1dff_3
-    #         name: Bed Heater
-    #       - entity: switch.6301574084f3ebed1dff_4
-    #         name: Battery Charger
-    #       - entity: fan.battery_fan_forward
-    #         name: Fan forward
-    #       - entity: fan.battery_fan_reverse
-    #         name: Fan reverse
-    #       - entity: sensor.uptime
-    #         name: ESP32 Uptime
-    #     title: Greenhouse Outlets
-    #     show_header_toggle: false
-          # - entity: sensor.averagetemperature
-          #   name: Average
-          # - entity: sensor.greenhousetemperature
-          #   name: Middle
-          # - entity: sensor.greenhouseintemperature
-          #   name: In
-          # - entity: sensor.greenhouseouttemperature
-          #   name: Out
-          # - entity: sensor.greenhouseoutsidetemperature
-          #   name: Outside
-  - title: Cameras
-    cards:
-      - camera_view: live
-        entity: camera.garage
-        type: picture-entity
-      - camera_view: live
-        entity: camera.kitchen
-        type: picture-entity
-      - camera_view: live
-        entity: camera.furnace
-        type: picture-entity
-      - camera_view: live
-        entity: camera.basement
-        type: picture-entity
+        - type: entities
+          title: Controls
+          show_header_toggle: false
+          entities:
+            - entity: switch.greenhouse_irrigation
+              name: Irrigation
+            - entity: switch.greenhouse_light
+              name: Lights
+            - entity: switch.6301574084f3ebed1dff_4
+              name: Battery Charger
+            - entity: sensor.uptime
+              name: ESP32 Uptime
+        - type: 'custom:simple-thermostat'
+          entity: climate.greenhouse_main_thermostat
+          name: Main
+          step_layout: row
+          icon: false
+          control: false
+        - type: 'custom:simple-thermostat'
+          entity: climate.greenhouse_bed_thermostat
+          step_layout: row
+          name: Heated Bed
+          icon: false
+          control: false
+        - type: 'custom:simple-thermostat'
+          entity: climate.greenhouse_vent_thermostat
+          step_layout: row
+          name: Vent
+          icon: false
+          control: false
+        - type: 'custom:simple-thermostat'
+          entity: climate.greenhouse_earth_battery_thermostat
+          step_layout: row
+          name: Earth Battery
+          icon: false
+          control: false
+        - type: entities
+          title: Temperature Control
+          show_header_toggle: false
+          entities:
+            - entity: switch.greenhouse_vent
+              name: Vent
+            - entity: fan.battery_fan_forward
+              name: Fan forward
+            - entity: fan.battery_fan_reverse
+              name: Fan reverse
+            - entity: switch.6301574084f3ebed1dff_1
+              name: West Heater
+            - entity: switch.6301574084f3ebed1dff_2
+              name: East Heater
+            - entity: switch.6301574084f3ebed1dff_3
+              name: Bed Heater
+        - type: entities
+          title: Solar
+          show_header_toggle: false
+          entities:
+            - entity: sensor.solarpaneltilt
+              name: Tilt
+            - entity: sensor.sun_azimuth
+              name: Azimuth
+            - entity: sensor.sun_elevation
+              name: Elevation
+            - entity: cover.solarpanel
+              name: Solar panel
+        - type: custom:mini-graph-card
+          name: Power
+          entities:
+          - entity: sensor.greenhouse_voltage
+            unit: 'Volts'
+            name: Voltage
+          - entity: sensor.greenhouse_current
+            name: Current
+            unit: 'Amps'
+          - entity: sensor.greenhouse_power
+            name: Power
+            unit: 'Watt'
+  # - title: Cameras
+  #   cards:
+  #     - camera_view: live
+  #       entity: camera.garage
+  #       type: picture-entity
+  #     - camera_view: live
+  #       entity: camera.kitchen
+  #       type: picture-entity
+  #     - camera_view: live
+  #       entity: camera.furnace
+  #       type: picture-entity
+  #     - camera_view: live
+  #       entity: camera.basement
+  #       type: picture-entity
   - title: Iphone Tracker
+    visible:
+      - user: d427a22cbc294d8fbf79d957ac98761c
+      - user: aa407a5348d94966aefb6044664c7cbb
     cards:
     - type: "custom:icloud3-event-log-card"
       entity: sensor.icloud3_event_log

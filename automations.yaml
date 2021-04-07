@@ -35,7 +35,7 @@
   action:
   - data:
       message: Remote Disconnected!!
-      target: !secret discord_channel
+      target: '734948847159083020'
     service: notify.discorder
 - id: damon tricorder discord
   alias: damon tricorder discord
@@ -49,7 +49,7 @@
     data_template:
       message: Tricorder 1 {{trigger.to_state.name}} changed from {{trigger.from_state.state}}
         to {{trigger.to_state.state }}
-      target: !secret discord_channel
+      target: '734948847159083020'
 - id: damon tracking tricorder 2
   alias: damon tracking tricorder 2
   description: ''
@@ -62,7 +62,7 @@
     data_template:
       message: Tricorder 2 {{trigger.to_state.name}} changed from {{trigger.from_state.state}}
         to {{trigger.to_state.state }}
-      target: !secret discord_channel
+      target: '734948847159083020'
 - id: damon hk home discord
   alias: damon hk home discord
   description: ''
@@ -75,7 +75,7 @@
     data_template:
       message: '{{trigger.to_state.name}} changed from {{trigger.from_state.state}}
         to {{trigger.to_state.state }}'
-      target: !secret discord_channel
+      target: '734948847159083020'
 - id: damon hk zm on
   alias: damon hk zm on
   trigger:
@@ -85,7 +85,7 @@
   action:
   - service: zoneminder.set_run_state
     data:
-      id: !secret zm_home_host
+      id: hydra.tayoby.com:8443
       name: WEHOME
 - id: damon hk zm off
   alias: damon hk zm off
@@ -96,7 +96,7 @@
   action:
   - service: zoneminder.set_run_state
     data:
-      id: !secret zm_home_host
+      id: hydra.tayoby.com:8443
       name: WEAWAY
 - id: solartild
   alias: Solar Tilt
@@ -122,7 +122,7 @@
   action:
   - data_template:
       message: Acurite Weather station has not sent a message for too long!!
-      target: !secret discord_channel
+      target: '734948847159083020'
     service: notify.discorder
 - id: weather station online
   alias: weather station online
@@ -136,7 +136,7 @@
   action:
   - data_template:
       message: Acurite Weather station is sending messages again!!
-      target: !secret discord_channel
+      target: '734948847159083020'
     service: notify.discorder
 - id: Camera Motion Detected
   alias: Camera Motion Detected
@@ -220,3 +220,58 @@
     data:
       entity_id: script.1592841446415
       mode: single
+  mode: single
+- id: greenhouse_charger_on
+  alias: Greenhouse 12v supply on
+  description: ''
+  trigger:
+    platform: time
+    at:
+    - 04:00:00
+    - '11:00:00'
+    - '18:00:00'
+  action:
+  - service: switch.turn_on
+    entity_id: switch.6301574084f3ebed1dff_4
+  - service: timer.start
+    entity_id: timer.gh_charge_timer
+- id: greehouse_charger_off
+  alias: Greehouse 12v supply off
+  trigger:
+  - event_data:
+      entity_id: timer.gh_charge_timer
+    event_type: timer.finished
+    platform: event
+  condition: []
+  action:
+  - service: switch.turn_off
+    entity_id: switch.6301574084f3ebed1dff_4
+- id: '1616030275611'
+  alias: Charge Greenhouse Battery
+  description: ''
+  trigger:
+  - type: value
+    platform: device
+    device_id: aaf1bb938fbb46e7a3d6f93585da63f0
+    entity_id: sensor.greenhouse_voltage
+    domain: sensor
+    below: 11.5
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+      milliseconds: 0
+  condition: []
+  action:
+  - service: switch.turn_on
+    data: {}
+    entity_id: switch.6301574084f3ebed1dff_4
+  - delay:
+      hours: 0
+      minutes: 30
+      seconds: 0
+      milliseconds: 0
+  - service: switch.turn_off
+    data: {}
+    entity_id: switch.6301574084f3ebed1dff_4
+  mode: single

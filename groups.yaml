@@ -6,3 +6,8 @@ nightLights:
     - switch.garage_outside_lights
     - light.living_room_lamp
     - light.foyer_lamp
+greenhouse_heaters:
+  name: Greenhouse Heaters
+  entities:
+    - switch.6301574084f3ebed1dff_1
+    - switch.6301574084f3ebed1dff_2

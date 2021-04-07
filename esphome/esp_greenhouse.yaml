@@ -1,7 +1,7 @@
 esphome:
   name: esp_greenhouse
   platform: ESP32
-  board: esp32dev
+  board: nodemcu-32s
 
 wifi:
   ssid: !secret wifi
@@ -35,8 +35,8 @@ dallas:
     update_interval: 30s
 i2c:
    - id: bus_a
-     sda: 21
-     scl: 22
+     sda: GPIO21
+     scl: GPIO22
      scan: True
 
 time:
@@ -72,37 +72,28 @@ output:
 sensor:
   - platform: uptime
     name: uptime
-
   - platform: dallas
     address: 0x250517C11B30FF28
-    name: "temp_probe_1"
-    filters:
-      - lambda: return x * (9.0/5.0) + 32.0;
-    unit_of_measurement: "°F"
-    on_value_range:
-      - below: 85.0
-        then:
-          - logger.log: "Temperature cool enough, closing vent"
-          - switch.turn_off: greenhousevent
-      - above: 90.0
-        then:
-          - logger.log: "Temperature too high, opening vent"
-          - switch.turn_on: greenhousevent
-
+    name: bed_temp
+    id: bed_temp
+    # filters:
+    #   - lambda: return x * (9.0/5.0) + 32.0;
+    # unit_of_measurement: "°F"
   - platform: ina219
     i2c_id: bus_a
     address: 0x40
     shunt_resistance: 0.005 ohm
     current:
-      name: "INA219 Current"
+      name: "greenhouse current"
     power:
-      name: "INA219 Power"
+      name: "greenhouse power"
     bus_voltage:
-      name: "INA219 Bus Voltage"
+      name: "greenhouse voltage"
+      id: greenhouse_voltage
     shunt_voltage:
-      name: "INA219 Shunt Voltage"
+      name: "greenhouse shunt voltage"
     max_voltage: 16.0V
-    max_current: 10.0A
+    max_current: 20.0A
     update_interval: 10s
   - platform: sun
     name: "Sun Azimuth"
@@ -136,43 +127,30 @@ sensor:
            return x;
          }
   - platform: homeassistant
-    name: "mainTemperature"
-    id: maintemperature
-    entity_id: sensor.greenhousetemperature
+    name: acurite 9908 tempurature
+    id: acurite_9908_tempurature
+    entity_id: sensor.greenhouse_temperature_9908
     unit_of_measurement: "°F"
   - platform: homeassistant
-    name: "inTemperature"
-    id: intemperature
-    entity_id: sensor.greenhouseintemperature
+    name: acurite 5885 tempurature
+    id: acurite_5885_tempurature
+    entity_id: sensor.greenhouse_temperature_5885
     unit_of_measurement: "°F"
   - platform: homeassistant
-    name: "outTemperature"
-    id: outtemperature
-    entity_id: sensor.greenhouseouttemperature
+    name: Greenhouse Outside Temperature
+    id: greenhouse_outside_temperature
+    entity_id: sensor.acurite_5n1_temperature
     unit_of_measurement: "°F"
   - platform: homeassistant
-    name: "outsideTemperature"
-    id: outsidetemperature
-    entity_id: sensor.greenhouseoutsidetemperature
+    name: greenhouse inside temperature
+    id: greenhouse_inside_temperature
+    entity_id: sensor.bed_temp
     unit_of_measurement: "°F"
-  - platform: template
-    name: averageTemperature
-    id: averagetemperature
+  - platform: homeassistant
+    name: greenhouse soil temperature
+    id: greenhouse_soil_temperature
+    entity_id: sensor.bed_temp
     unit_of_measurement: "°F"
-    lambda: |-
-      return (id(maintemperature).state + id(outtemperature).state + id(intemperature).state) / 3;
-    update_interval: 30s
-    on_value_range:
-      - below: 65.0
-        above: 50.0
-        then:
-          - script.execute: script_earthBatteryOff
-      - above: 65.0
-        then:
-          - script.execute: script_earthBatteryCharge
-      - below: 50.0
-        then:
-          - script.execute: script_earthBatteryDischarge
 switch:
   - platform: gpio
     name: Solar panel up
@@ -351,3 +329,40 @@ fan:
       low: .40
       medium: .70
       high: 1.0
+
+climate:
+  - platform: thermostat
+    name: greenhouse vent thermostat
+    id: greenhouse_vent_thermostat
+    sensor: bed_temp
+    default_target_temperature_high: 87 °F
+    hysteresis: 2
+    visual:
+      min_temperature: 80 °F
+      max_temperature: 100 °F
+      temperature_step: 1 °F
+    cool_action:
+      - logger.log: "Temperature too high, opening vent"
+      - switch.turn_on: greenhousevent
+    idle_action:
+      - logger.log: "Temperature cool enough, closing vent"
+      - switch.turn_off: greenhousevent
+  - platform: thermostat
+    name: greenhouse earth battery thermostat
+    id: greenhouse_earth_battery_thermostat
+    sensor: bed_temp
+    default_target_temperature_high: 75 °F
+    default_target_temperature_low: 50 °F
+    visual:
+      min_temperature: 40 °F
+      max_temperature: 100 °F
+      temperature_step: 1 °F
+    heat_action:
+      - logger.log: "Earth Battery beginning discharge"
+      - script.execute: script_earthBatteryDischarge
+    cool_action:
+      - logger.log: "Earth Battery beginning charge"
+      - script.execute: script_earthBatteryCharge
+    idle_action:
+      - logger.log: "Earth Battery idle"
+      - script.execute: script_earthBatteryOff

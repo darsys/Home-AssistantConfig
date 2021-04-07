@@ -29,6 +29,7 @@ automation: !include automations.yaml
 scene: !include scenes.yaml
 script: !include scripts.yaml
 camera: !include cameras.yaml
+climate: !include climate.yaml
 
 stream:
 ffmpeg:
@@ -80,6 +81,12 @@ recorder:
       - sensor.time
       - sensor.time_date
       - sensor.time_utc
+      - sensor.ups_status_date
+      - sensor.damon_tricorder_last_update
+      - sensor.damon_tricorder_next_update
+      - sensor.damon_tricorder_trigger
+      - sensor.damon_tricorder_poll_count
+      - sensor.damon_tricorder_last_located
 
 history:
   exclude:
@@ -91,7 +98,12 @@ history:
       - sensor.time
       - sensor.time_date
       - sensor.time_utc
-
+      - sensor.ups_status_date
+      - sensor.damon_tricorder_last_update
+      - sensor.damon_tricorder_next_update
+      - sensor.damon_tricorder_trigger
+      - sensor.damon_tricorder_poll_count
+      - sensor.damon_tricorder_last_located
 
 influxdb:
   host: !secret influxhost
@@ -107,6 +119,55 @@ input_datetime:
     name: Nightlight Off Time
     has_date: false
     has_time: true
+
+input_boolean:
+  damon_hk_present:
+    name: DamonHK
+    icon: mdi:account
+  kristi_hk_present:
+    name: KristiHK
+    icon: mdi:account
+  shop_occupied:
+    name: Shop is occupied
+    initial: off
+  exhaustfanon:
+    name: Exhaust fan on
+    initial: off
+
+input_select:
+  exhaust_fan_speed:
+    name: Exhaust Fan Speed
+    initial: low
+    options:
+      - low
+      - medium
+      - high
+
+input_number:
+  greehhouse_charge_temp:
+    name: Greehhouse Charge Temp
+    initial: 65
+    min: -45
+    max: 95
+    step: 1
+  greehhouse_discharge_temp:
+    name: Greehhouse Discharge Temp
+    initial: 50
+    min: -45
+    max: 95
+    step: 1
+  greehhouse_vent_on_temp:
+    name: Greehhouse Vent On Temp
+    initial: 90
+    min: 70
+    max: 95
+    step: 1
+  greehhouse_vent_off_temp:
+    name: Greehhouse Vent Off Temp
+    initial: 75
+    min: 55
+    max: 90
+    step: 1
 
 octoprint:
   name: octoprint
@@ -131,26 +192,6 @@ tplink:
     - host: 192.168.88.61
 
 switch:
-  # - platform: remote_rpi_gpio
-  #   host: !secret panelpi_ip
-  #   ports:
-  #     7: exhaust_low
-  #     8: exhaust_high
-  # - platform: template
-  #   switches:
-  #     exhaust_low:
-  #       friendly_name: "Exhaust Fan Low"
-  #       value_template: "{{ is_state('sensor.living_room_left_status', 'True') }}"
-  #       turn_on:
-  #         service: rest_command.panelpi_digital
-  #         data:
-  #           pin: 7
-  #           value: 0
-  #       turn_off:
-  #         service: rest_command.panelpi_digital
-  #         data:
-  #           node: 7
-  #           value: 1
   - platform: rest
     name: exhaustfanlow
     resource: http://192.168.88.48:3000/gpio/digital/7
@@ -208,7 +249,14 @@ sensor:
     state_topic: rtl_sdr/5885/humidity
     unit_of_measurement: '%'
   - platform: mqtt
-    state_topic: "greenhouse/temperature1"
+    name: Greenhouse Temperature 9908
+    state_topic: "rtl_sdr/9908/temperature_C"
+    unit_of_measurement: '°C'
+    value_template: "{{ value | float | round(1) }} "
+  - platform: mqtt
+    name: Greenhouse Humidity 9908
+    state_topic: rtl_sdr/9908/humidity
+    unit_of_measurement: '%'
   - platform: mqtt
     name: "Acurite 5n1 Time"
     state_topic: "rtl_sdr/271/time"
@@ -329,32 +377,6 @@ sensor:
 apcupsd:
   host: !secret apcupsd_host
 
-climate:
-  - platform: climate_group
-    name: Shop Heat
-    temperature_unit: 'F'
-    entities:
-    - climate.shop_west_heat
-    - climate.shop_east_heat
-  - platform: generic_thermostat
-    name: Shop East Heat
-    heater: switch.shop_east_heat_low
-    target_sensor: sensor.shop_east_temperature
-    min_temp: 45
-    max_temp: 85
-    ac_mode: false
-    target_temp: 50
-    cold_tolerance: 0.5
-    hot_tolerance: 0.8
-    min_cycle_duration:
-      minutes: 2
-    initial_hvac_mode: "heat"
-    away_temp: 50
-    precision: 0.1
-  - platform: honeywell
-    username: !secret honeywellun
-    password: !secret honeywellpw
-
 homekit:
   filter:
     include_entities:
@@ -373,30 +395,9 @@ timer:
     duration: '00:45:00'
   shutdown_timer:
     duration: '00:00:45'
+  gh_charge_timer:
+    duration: '02:00:00'
     
-input_boolean:
-  damon_hk_present:
-    name: DamonHK
-    icon: mdi:account
-  kristi_hk_present:
-    name: KristiHK
-    icon: mdi:account
-  shop_occupied:
-    name: Shop is occupied
-    initial: off
-  exhaustfanon:
-    name: Exhaust fan on
-    initial: off
-
-input_select:
-  exhaust_fan_speed:
-    name: Exhaust Fan Speed
-    initial: low
-    options:
-      - low
-      - medium
-      - high
-
 fan:
   - platform: template
     fans:

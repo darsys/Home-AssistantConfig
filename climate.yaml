@@ -1,0 +1,49 @@
+- platform: honeywell
+  username: !secret honeywellun
+  password: !secret honeywellpw
+- platform: climate_group
+  name: Shop Heat
+  temperature_unit: 'F'
+  entities:
+  - climate.shop_west_heat
+  - climate.shop_east_thermostat
+- platform: generic_thermostat
+  name: Greenhouse Main Thermostat
+  heater: group.greenhouse_heaters
+  target_sensor: sensor.bed_temp
+  min_temp: 35
+  max_temp: 80
+  ac_mode: false
+  target_temp: 50
+  cold_tolerance: 0.5
+  hot_tolerance: 0.8
+  min_cycle_duration:
+    minutes: 1
+  initial_hvac_mode: "heat"
+  away_temp: 40
+  precision: 1
+- platform: generic_thermostat
+  name: Greenhouse Bed Thermostat
+  heater: switch.6301574084f3ebed1dff_3
+  target_sensor: sensor.bed_temp
+  min_temp: 40
+  max_temp: 70
+  ac_mode: false
+  target_temp: 60
+  initial_hvac_mode: "heat"
+  away_temp: 40
+  precision: 1
+# - platform: generic_thermostat
+#   name: greenhouse vent thermostat
+#   heater: switch.greenhouse_vent
+#   target_sensor: sensor.bed_temp
+#   ac_mode: true
+#   initial_hvac_mode: "cool"
+#   cold_tolerance: 5
+#   min_cycle_duration:
+#       seconds: 5
+#   min_temp: 75
+#   max_temp: 100
+#   target_temp: 90
+#   away_temp: 75
+#   precision: 1
