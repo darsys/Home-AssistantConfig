@@ -41,16 +41,20 @@ southcenterdoor_stop:
 shop_occupied:
   alias: Shop Occupied
   sequence:
-  - service: switch.turn_on
-    data:
-      entity_id: switch.baylights
-  - service: script.turn_on
-    data:
-      entity_id: script.shop_climate_warm
   - service: notify.discorder
     data:
       message: Shop Occupied!
       target: !secret discord_channel
+  - service: switch.turn_on
+    data:
+      entity_id: switch.baylights
+  - condition: numeric_state
+    entity_id: climate.current_temperature
+    attribute: temperature
+    below: 52
+  - service: script.turn_on
+    data:
+      entity_id: script.shop_climate_warm
 shop_begin_unoccupied:
   alias: Shop start unoccupied
   sequence:

@@ -51,8 +51,8 @@ zone:
 
 logger:
   default: warn
-  logs:
-    homeassistant.components.tplink: debug
+  #logs:
+    # homeassistant.components.tplink: debug
   
 mqtt:
   broker: !secret mqtt_host
@@ -183,13 +183,30 @@ zoneminder:
 
 tplink:
   light:
+    #master bedroom lamp
     - host: 192.168.88.56
+    #foyer lamp
     - host: 192.168.88.57
+    #living room lamp
     - host: 192.168.88.58
   switch:
+    #front porch light switch
     - host: 192.168.88.59
+    #garage outside light switch
     - host: 192.168.88.60
+    #shed storage room light switch
     - host: 192.168.88.61
+    #master bath exhaust fan switch
+    - host: 192.168.88.62
+    #master bath shower light switch
+    - host: 192.168.88.63
+    #upstairs hallway light switch
+    - host: 192.168.88.64
+  dimmer:
+    #master bath light dimmer
+    - host: 192.168.88.65
+    #master bath toilet light dimmer
+    - host: 192.168.88.66
 
 switch:
   - platform: rest
@@ -275,6 +292,12 @@ sensor:
     state_topic: "rtl_sdr/271/temperature_C"
     unit_of_measurement: '°C'
     value_template: "{{ value | float | round(1) }} "
+  - platform: statistics
+    name: rainfall_stats
+    entity_id: sensor.acurite_5n1_rainfall
+    sampling_size: 100
+    max_age:
+      minutes: 15
   - platform: mqtt
     name: Acurite 5n1 Humidity
     state_topic: rtl_sdr/271/humidity
@@ -283,8 +306,14 @@ sensor:
     name: Acurite 5n1 Rainfall
     state_topic: rtl_sdr/271/rain_mm
     unit_of_measurement: 'in'
-    value_template: "{{ ((value | float)  *  0.03937) | round(1) }} "
+    value_template: "{{ ((value | float)  *  0.03937) | round(2) }} "
     force_update: true
+  - platform: statistics
+    name: tempurature_stats
+    entity_id: sensor.acurite_5n1_temperature
+    sampling_size: 100
+    max_age:
+      minutes: 15
   - platform: uptime
     name: uptime
   - platform: octoprint
